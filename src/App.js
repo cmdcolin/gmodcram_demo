@@ -1,23 +1,38 @@
-import logo from './logo.svg';
-import './App.css';
+import { useEffect, useState } from "react";
+import { RemoteFile } from "generic-filehandle";
+import { IndexedCramFile, CraiIndex } from "@gmod/cram";
 
 function App() {
+  const [reads, setReads] = useState();
+  useEffect(() => {
+    (async () => {
+      // open local files
+      const indexedFile = new IndexedCramFile({
+        cramFilehandle: new RemoteFile("volvox-sorted.cram"),
+        index: new CraiIndex({
+          filehandle: new RemoteFile("volvox-sorted.cram.crai"),
+        }),
+        seqFetch: async () => {
+          return "";
+        },
+        checkSequenceMD5: false,
+      });
+
+      const records = await indexedFile.getRecordsForRange(0, 0, 1000);
+      setReads(records);
+    })();
+  }, []);
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      {!reads ? (
+        <p>Loading...</p>
+      ) : (
+        reads.map((r) => (
+          <div>
+            {r.readName}:{r.alignmentStart}-{r.alignmentStart + r.lengthOnRef}
+          </div>
+        ))
+      )}
     </div>
   );
 }
